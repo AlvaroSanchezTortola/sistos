@@ -403,17 +403,19 @@ public class UserProcess {
     private int writeFile(int fileDescriptor, int buffer, int count){
         byte[] bufferr = new byte[count];
         
-        int escrito = readVirtualMemory(buffer, buffer, 0, file);
+        int leido = readVirtualMemory(buffer, bufferr, 0, count);
 
-        int file = fileTable[fileDescriptor].read(bufferr, 0, count);
-
-        if (file == -1){
+        if(leido == -1){
             return -1;
         }
 
+        int file = fileTable[fileDescriptor].write(bufferr, 0, leido);
+
+        if (file == -1){
+            return -1;
+        }        
         
-        
-        return file;
+        return leido;
     }
 
 
