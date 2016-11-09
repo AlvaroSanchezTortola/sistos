@@ -6,6 +6,8 @@ import nachos.userprog.*;
 
 import java.io.EOFException;
 
+import java.util.ArrayList;
+
 /**
  * Encapsulates the state of a user process that is not contained in its
  * user thread (or threads). This includes its address translation state, a
@@ -389,41 +391,44 @@ public class UserProcess {
 
     private int readFile(int fileDescriptor, int buffer, int count){
         byte[] bufferr = new byte[count];
-        int file = fileTable[fileDescriptor].read(bufferr, 0, count);
+        int file = fileTable.get(fileDescriptor).read(bufferr, 0, count);
 
         if (file == -1){
             return -1;
         }
-
         int escrito = writeVirtualMemory(buffer, buffer, 0, file);
-
         return file;
     }
 
     private int writeFile(int fileDescriptor, int buffer, int count){
-        byte[] bufferr = new byte[count];
-        
+        byte[] bufferr = new byte[count];        
         int leido = readVirtualMemory(buffer, bufferr, 0, count);
-
         if(leido == -1){
             return -1;
         }
-
-        int file = fileTable[fileDescriptor].write(bufferr, 0, leido);
-
+        
+        int file = fileTable.get(fileDescriptor).write(bufferr, 0, leido);
         if (file == -1){
             return -1;
-        }        
-        
+        }                
         return leido;
+    }
+
+    private int closeFile(int fileDescriptor){
+
+        return -1;
+    }
+
+    private int unlinkFile(int fileDescriptor){
+        return -1;
     }
 
 
 
     private int getDisponible(){
         if(fileTable != null){
-            for (int i = 0; i < fileTable.length(); i++){
-                if(fileTable(i)!=null){
+            for (int i = 0; i < fileTable.size(); i++){
+                if(fileTable.get(i)!=null){
                     return i;
                 }
             }
@@ -517,7 +522,7 @@ public class UserProcess {
 	    Lib.assertNotReached("Unexpected exception");
 	}
     }
-    protected ArrayList<String> fileTable = new ArrayList<String>(16);
+    protected ArrayList<Integer> fileTable = new ArrayList<Integer>(16);
 
     /** The program being run by this process. */
     protected Coff coff;
