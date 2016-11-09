@@ -365,7 +365,9 @@ public class UserProcess {
 
         int nombre = ThreadedKernel.fileSystem.open(name, false);
 
-        fileTable[disponible] = nombre;   
+        fileTable.add = nombre;  
+
+        return 
 
     }
 
