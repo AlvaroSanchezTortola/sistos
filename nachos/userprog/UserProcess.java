@@ -346,22 +346,39 @@ public class UserProcess {
 	return 0;
     }
 
-    private int openFile(int fine_addr){
+    private int openFile(int file_addr){
         
+        String file = readVirtualMemoryString(file_addr, 256);
+
+        int nombre = ThreadedKernel.fileSystem.open(name, false);
+
+        fileTable.add = nombre;
+
+        return nombre;
+    }
+
+    private int createFIle(int file_addr){
+
+        String file = readVirtualMemoryString(file_addr, 256);
+
+        int nombre = ThreadedKernel.fileSystem.open(name, false);
+
+        fileTable[disponible] = nombre;   
+
     }
 
 
     private static final int
         syscallHalt = 0,
-	syscallExit = 1,
-	syscallExec = 2,
-	syscallJoin = 3,
-	syscallCreate = 4,
-	syscallOpen = 5,
-	syscallRead = 6,
-	syscallWrite = 7,
-	syscallClose = 8,
-	syscallUnlink = 9;
+    	syscallExit = 1,
+    	syscallExec = 2,
+    	syscallJoin = 3,
+    	syscallCreate = 4,
+    	syscallOpen = 5,
+    	syscallRead = 6,
+    	syscallWrite = 7,
+    	syscallClose = 8,
+    	syscallUnlink = 9;
 
     /**
      * Handle a syscall exception. Called by <tt>handleException()</tt>. The
@@ -433,7 +450,7 @@ public class UserProcess {
 	    Lib.assertNotReached("Unexpected exception");
 	}
     }
-    protected ArrayList<Integer> fileTable = new ArrayList<Integer>(16);
+    protected ArrayList<String> fileTable = new ArrayList<String>(16);
 
     /** The program being run by this process. */
     protected Coff coff;
