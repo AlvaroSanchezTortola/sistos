@@ -355,26 +355,68 @@ public class UserProcess {
         //busca en memoria el contenido
         //256 porque el tama;o debe der de esta cantida de bytes
         String file = readVirtualMemoryString(file_addr, 256);
+        
         //syscall que hay que hacer, le pasa lo que acaba de sacar del address
         //false porque no lo crea, solo lo abre
         int nombre = ThreadedKernel.fileSystem.open(file, false);
+
         //agregar lo que se saca del descriptor table al file table
         fileTable.set(indice, nombre);
         //retorna el descriptor table
         return nombre;
     }
 
-    private int createFIle(int file_addr){
+    private int createFile(int file_addr){
 
+        //verifica espacio disponible
+        int indice = getDisponible();
+        if (indice == -1 ){
+            return -1;
+        }
+        //busca en memoria el contenido
+        //256 porque el tama;o debe der de esta cantida de bytes
         String file = readVirtualMemoryString(file_addr, 256);
+        
+        //syscall que hay que hacer, le pasa lo que acaba de sacar del address
+        //false porque no lo crea, solo lo abre
+        int nombre = ThreadedKernel.fileSystem.open(file, true);
 
-        int nombre = ThreadedKernel.fileSystem.open(name, false);
-
-        fileTable.add = nombre;  
-
-        return 
-
+        //agregar lo que se saca del descriptor table al file table
+        fileTable.set(indice, nombre);
+        //retorna el descriptor table
+        return nombre;
     }
+
+    private int readFile(int fileDescriptor, int buffer, int count){
+        byte[] bufferr = new byte[count];
+        int file = fileTable[fileDescriptor].read(bufferr, 0, count);
+
+        if (file == -1){
+            return -1;
+        }
+
+        int escrito = writeVirtualMemory(buffer, buffer, 0, file);
+
+        return file;
+    }
+
+    private int writeFile(int fileDescriptor, int buffer, int count){
+        byte[] bufferr = new byte[count];
+        
+        int escrito = readVirtualMemory(buffer, buffer, 0, file);
+
+        int file = fileTable[fileDescriptor].read(bufferr, 0, count);
+
+        if (file == -1){
+            return -1;
+        }
+
+        
+        
+        return file;
+    }
+
+
 
     private int getDisponible(){
         if(fileTable != null){
