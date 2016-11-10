@@ -360,12 +360,12 @@ public class UserProcess {
         
         //syscall que hay que hacer, le pasa lo que acaba de sacar del address
         //false porque no lo crea, solo lo abre
-        int nombre = ThreadedKernel.fileSystem.open(file, false);
+        OpenFile nombre = ThreadedKernel.fileSystem.open(file, false);
 
         //agregar lo que se saca del descriptor table al file table
         fileTable.set(indice, nombre);
         //retorna el descriptor table
-        return nombre;
+        return indice;
     }
 
     private int createFile(int file_addr){
@@ -381,12 +381,12 @@ public class UserProcess {
         
         //syscall que hay que hacer, le pasa lo que acaba de sacar del address
         //false porque no lo crea, solo lo abre
-        int nombre = ThreadedKernel.fileSystem.open(file, true);
+        OpenFile nombre = ThreadedKernel.fileSystem.open(file, true);
 
         //agregar lo que se saca del descriptor table al file table
         fileTable.set(indice, nombre);
         //retorna el descriptor table
-        return nombre;
+        return indice;
     }
 
     private int readFile(int fileDescriptor, int buffer, int count){
@@ -396,7 +396,7 @@ public class UserProcess {
         if (file == -1){
             return -1;
         }
-        int escrito = writeVirtualMemory(buffer, buffer, 0, file);
+        int escrito = writeVirtualMemory(buffer, bufferr, 0, file);
         return file;
     }
 
@@ -406,7 +406,7 @@ public class UserProcess {
         if(leido == -1){
             return -1;
         }
-        
+
         int file = fileTable.get(fileDescriptor).write(bufferr, 0, leido);
         if (file == -1){
             return -1;
@@ -426,17 +426,17 @@ public class UserProcess {
 
 
     private int getDisponible(){
+        int retornar =-1;
         if(fileTable != null){
             for (int i = 0; i < fileTable.size(); i++){
                 if(fileTable.get(i)!=null){
-                    return i;
+                    retornar = i;
                 }
             }
         }
-        else{
-            return -1;
-        }
-        
+        else retornar = -1;
+                
+        return retornar;
     }
 
 
@@ -522,7 +522,7 @@ public class UserProcess {
 	    Lib.assertNotReached("Unexpected exception");
 	}
     }
-    protected ArrayList<Integer> fileTable = new ArrayList<Integer>(16);
+    protected ArrayList<OpenFile> fileTable = new ArrayList<OpenFile>(16);
 
     /** The program being run by this process. */
     protected Coff coff;
