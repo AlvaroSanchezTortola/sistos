@@ -397,6 +397,10 @@ public class UserProcess {
             return -1;
         }
         int escrito = writeVirtualMemory(buffer, bufferr, 0, file);
+
+        if(escrito != file){
+            return -1;
+        }
         return file;
     }
 
@@ -411,16 +415,27 @@ public class UserProcess {
         if (file == -1){
             return -1;
         }                
-        return leido;
+        return file;
     }
 
     private int closeFile(int fileDescriptor){
-
-        return -1;
+        if (fileTable.get(fileDescriptor)==null){
+            return -1;
+        }
+        String nombre = fileTable.get(fileDescriptor).getName();
+        fileTable.get(fileDescriptor).close();
+        fileTable.set(fileDescriptor, null);        
+        return 0;
     }
 
     private int unlinkFile(int fileDescriptor){
-        return -1;
+        if (fileTable.get(fileDescriptor)==null){
+            return -1;
+        }
+        String nombre = fileTable.get(fileDescriptor).getName();
+        fileTable.get(fileDescriptor).close();
+        fileTable.set(fileDescriptor, null);  
+        return 0;
     }
 
 
@@ -484,6 +499,19 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
+    case syscallOpen:
+        return openFile(a0);
+    case syscallCreate:
+        return createFile(a0);
+    case syscallRead:
+        return readFile(a0, a1, a2);
+    case syscallWrite:
+        return writeFile(a0, a1, a2);
+    case syscallClose:
+        return closeFile(a0);
+    case syscallUnlink:
+        return unlinkFile(a0);
+
 
 
 	default:
