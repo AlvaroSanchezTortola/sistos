@@ -390,14 +390,16 @@ public class UserProcess {
     }
 
     private int readFile(int fileDescriptor, int buffer, int count){
+        //buffer pointer al buffer en la memoria virtual
+        //count que tanto leer o -1 si es error
         byte[] bufferr = new byte[count];
         int file = fileTable.get(fileDescriptor).read(bufferr, 0, count);
-
+        // si no se puede leer
         if (file == -1){
             return -1;
         }
         int escrito = writeVirtualMemory(buffer, bufferr, 0, file);
-
+        // si no se puede escrubur el buffer completo a memoria
         if(escrito != file){
             return -1;
         }
@@ -405,6 +407,7 @@ public class UserProcess {
     }
 
     private int writeFile(int fileDescriptor, int buffer, int count){
+
         byte[] bufferr = new byte[count];        
         int leido = readVirtualMemory(buffer, bufferr, 0, count);
         if(leido == -1){
@@ -423,20 +426,30 @@ public class UserProcess {
             return -1;
         }
         String nombre = fileTable.get(fileDescriptor).getName();
+        //quitar el file de la tabla 
         fileTable.get(fileDescriptor).close();
         fileTable.set(fileDescriptor, null);        
         return 0;
     }
-
+    //marca un file como pendiente para borrar y quira 
     private int unlinkFile(int fileDescriptor){
         if (fileTable.get(fileDescriptor)==null){
             return -1;
         }
         String nombre = fileTable.get(fileDescriptor).getName();
+        boolean file = ThreadedKernel.fileSystem.remove(nombre);
+        fileTable.get(fileDescriptor).close();
+        fileTable.set(fileDescriptor, null);        
+        return 0;
+        /*if (fileTable.get(fileDescriptor)==null){
+            return -1;
+        }
+        String nombre = fileTable.get(fileDescriptor).getName();
         fileTable.get(fileDescriptor).close();
         fileTable.set(fileDescriptor, null);  
-        return 0;
+        return 0;*/
     }
+
 
 
 
