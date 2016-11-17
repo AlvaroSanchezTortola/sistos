@@ -349,6 +349,9 @@ public class UserProcess {
     }
 
     private int openFile(int file_addr){
+        if (!validFileDescriptor(file_addr)){
+            return -1;
+        }
         //verifica espacio disponible
         int indice = getDisponible();
         if (indice == -1 ){
@@ -369,7 +372,9 @@ public class UserProcess {
     }
 
     private int createFile(int file_addr){
-
+        if (!validFileDescriptor(file_addr)){
+            return -1;
+        }
         //verifica espacio disponible
         int indice = getDisponible();
         if (indice == -1 ){
@@ -390,6 +395,9 @@ public class UserProcess {
     }
 
     private int readFile(int fileDescriptor, int buffer, int count){
+        if (!validFileDescriptor(fileDescriptor)){
+            return -1;
+        }
         //buffer pointer al buffer en la memoria virtual
         //count que tanto leer o -1 si es error
         byte[] bufferr = new byte[count];
@@ -407,6 +415,9 @@ public class UserProcess {
     }
 
     private int writeFile(int fileDescriptor, int buffer, int count){
+        if (!validFileDescriptor(fileDescriptor)){
+            return -1;
+        }
 
         byte[] bufferr = new byte[count];        
         int leido = readVirtualMemory(buffer, bufferr, 0, count);
@@ -414,7 +425,11 @@ public class UserProcess {
             return -1;
         }
 
-        int file = fileTable.get(fileDescriptor).write(bufferr, 0, leido);
+        int file = 0;
+        if(fileTable.get(fileDescriptor)!=null){
+            file = fileTable.get(fileDescriptor).write(bufferr, 0, leido);
+        }
+
         if (file == -1){
             return -1;
         }                
@@ -422,6 +437,10 @@ public class UserProcess {
     }
 
     private int closeFile(int fileDescriptor){
+        if (!validFileDescriptor(fileDescriptor)){
+            return -1;
+        }
+
         if (fileTable.get(fileDescriptor)==null){
             return -1;
         }
@@ -466,6 +485,16 @@ public class UserProcess {
                 
         return retornar;
     }
+
+
+
+private boolean validFileDescriptor(int fileDesc) {
+        // In range?
+        if (fileDesc < 0 || fileDesc >= fileTable.size())
+            return false;
+        // Table entry valid?
+        return fileTable.get(fileDesc) != null;
+}
 
 
     private static final int
