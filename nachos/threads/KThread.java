@@ -390,7 +390,8 @@ public class KThread {
 	Lib.assertTrue(this == currentThread);
     }
 
-/*  //Prueba hasta waitUntil
+    //---------PRUEBA JOIN Y WAITUNTIL------------------------
+    /*
     private static class PingTest implements Runnable {
     PingTest(int which) {
         this.which = which; 
@@ -409,6 +410,7 @@ public class KThread {
             tres.join(); 
         if ((which == 1) && (i==3)) 
             dos.join();
+        /-------------PRUEBA WAITUNTIL------------------------------    
         if (AlarmTest) { 
             if ((which==2) && (i==0)) { 
                 long time=1080; 
@@ -420,7 +422,7 @@ public class KThread {
                 System.out.println("** "+tres.getName()+" esperara al menos "+time+" ticks, despertara aprox. en "+(Machine.timer().getTime()+time)); 
                 ThreadedKernel.alarm.waitUntil(time); 
             } 
-        }          
+        } /----------------------------------------------------------         
         currentThread.yield(); 
         } 
     } 
@@ -438,9 +440,10 @@ public class KThread {
         tres = new KThread(new PingTest(3)).setName("forked thread3"); 
         tres.fork(); 
     } 
-*/
+    */  //--------------------------------------------------------------
+    
     /*
-    // Prueba hasta el communicator
+    // -------------PRUEBA DEL COMUNICATOR--------------------------
      private static class PingTest implements Runnable { 
         PingTest(int which, Communicator c) { 
         this.which = which; 
@@ -480,7 +483,7 @@ public class KThread {
         uno.fork();
         cero.join(); 
         uno.join();   
-    } 
+    } //------------------------------------------------------------
     */
 
     public static void selfTestRun(KThread t1, int t1p, KThread t2, int t2p){ 
@@ -519,12 +522,13 @@ public class KThread {
         final Condition2 condition;
 
 
-        /* 
+        /*  
         * Case 1: Tests priority scheduler without donation 
         * 
         * This runs t1 with priority 7, and t2 with priority 4. 
         * 
         */ 
+        //  ---------CASO 1 PRIORITY----------------------------------------
         /*
         System.out.println("Case 1:"); 
         t1 = new KThread(new Runnable() { 
@@ -549,21 +553,17 @@ public class KThread {
             }); 
         selfTestRun(t1, 7, t2, 4);
         */
+        
         /* 
+        * Case 2: Tests priority scheduler without donation, altering 
+        * priorities of threads after they've started running 
+        * 
+        * This runs t1 with priority 7, and t2 with priority 4, but 
+        * half-way through t1's process its priority is lowered to 2. 
+        * 
+        */
 
-* Case 2: Tests priority scheduler without donation, altering 
-
-* priorities of threads after they've started running 
-
-* 
-
-* This runs t1 with priority 7, and t2 with priority 4, but 
-
-* half-way through t1's process its priority is lowered to 2. 
-
-* 
-
-*/ 
+        //-------CASO 2-------------------------------------------
         /*
         System.out.println("Case 2:");
         t1 = new KThread(new Runnable(){ 
@@ -594,7 +594,9 @@ public class KThread {
             } 
         }); 
         selfTestRun(t1, 7, t2, 4); 
-        */
+        */ //--------------------------------------------------------
+
+
         /* 
         * Case 3: Tests priority donation 
         * 
@@ -605,6 +607,8 @@ public class KThread {
         * 
         */ 
         
+        //------CASO 3--------------------------------------------------
+        /*
         System.out.println("Case 3:"); 
         lock = new Lock(); 
         condition = new Condition2(lock); 
@@ -642,7 +646,9 @@ public class KThread {
         lock.release(); 
         } 
         }); 
-        selfTestRun(t1, 6, t2, 4, t3, 7); 
+        selfTestRun(t1, 6, t2, 4, t3, 7);
+
+        */ //----------------------------------------------------- 
     }
 
     private static final char dbgThread = 't';
