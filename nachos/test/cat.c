@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "syscall.h"
-#define TESTFILE "olga.txt"
+#define TESTFILE "OLGAAAA.txt"
 #define Bsize 2
 int retval;
 int fd;
@@ -13,7 +13,8 @@ int cnt = 2;
 char buf[Bsize];
 char buf2[Bsize];
 int main(){
-  fd = open(TESTFILE);
+  fd = creat(TESTFILE);
+  
   buf[0] = 'h';
   buf[1] = 'o';
   buf[Bsize] = '\0';
@@ -21,7 +22,7 @@ int main(){
   iii = read(fd, buf2, cnt);
 
   printf("*******leyosss: %s", buf2);
-
+	
   i = close(fd);
   halt();
 }
