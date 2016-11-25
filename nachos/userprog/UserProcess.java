@@ -25,7 +25,7 @@ public class UserProcess {
     public UserProcess() {
 	int numPhysPages = Machine.processor().getNumPhysPages();
     for (int i=0; i<16;i++){
-        fileDescriptorTable.add(null);
+        fileTable.add(null);
     }
 	pageTable = new TranslationEntry[numPhysPages];
  	for (int i=0; i<numPhysPages; i++)
@@ -444,118 +444,146 @@ public class UserProcess {
 	}
     }
 
-
-    //FILE MANAGEMENT SYSCALLS
-
-    public int creat(int dir_name){
-        String result=readVirtualMemoryString(dir_name,256);
-        if(result==null){
+    //------SYSCALLS------------------------------------------
+    public int creat(int file_addr){
+        //busca en memoria el contenido
+        //256 porque el tama;o debe der de esta cantida de bytes
+        String result = readVirtualMemoryString(file_addr,256);
+        if(result == null){
             return -1;
         }
-        int fileDescriptor=getNewDescriptor();
-        if(fileDescriptor==-1){
+
+        //verifica espacio disponible
+        int fileDescriptor = getDisponible();
+        if(fileDescriptor == -1){
             return -1; 
         }
+
+        //syscall que hay que hacer, le pasa lo que acaba de sacar del address
+        //true porque lo crea
         OpenFile file = ThreadedKernel.fileSystem.open(result, true);
         if (file == null) {
-            Lib.debug(dbgProcess, "\tcreat failed");
             return -1;
         }
-        fileDescriptorTable.set(fileDescriptor,file);
-        return fileDescriptor;
 
+        //agregar lo que se saca del descriptor table al file table
+        fileTable.set(fileDescriptor,file);
+        //retorna el descriptor table
+        return fileDescriptor;
     }
-    public int open(int dir_name){
-        String result=readVirtualMemoryString(dir_name,256);
-        if(result==null){
+
+    public int open(int file_addr){
+        //busca en memoria el contenido
+        //256 porque el tama;o debe der de esta cantida de bytes
+        String result = readVirtualMemoryString(file_addr,256);
+        if(result == null){
             return -1;
         }
-        int fileDescriptor=getNewDescriptor();
-        if(fileDescriptor==-1){
+        
+        int fileDescriptor = getDisponible();
+        if(fileDescriptor == -1){
             return -1; 
         }
+
+        //syscall que hay que hacer, le pasa lo que acaba de sacar del address
+        //false porque no lo crea, solo lo abre
         OpenFile file = ThreadedKernel.fileSystem.open(result, false);
         if (file == null) {
-            Lib.debug(dbgProcess, "\topen failed");
             return -1;
         }
-        fileDescriptorTable.set(fileDescriptor,file);
-        return fileDescriptor;
-        
-    }
-    public int unlink(int dir_name){
-        String result=readVirtualMemoryString(dir_name,256);
-        if(result==null){
-            return -1;
-        }
-        boolean val=ThreadedKernel.fileSystem.remove(result);
-        if(val==false){
-            return -1;
-        }
-        return 0; 
 
-    }
-    public int close (int fileDescriptor){
-        OpenFile file=getFile(fileDescriptor);
-        if(file==null){
-            return -1;
-        }
-        file.close();
-        fileDescriptorTable.set(fileDescriptor,null);
-        return 0;
-    }
-    public void exit(){
-
+        //agregar lo que se saca del descriptor table al file table
+        fileTable.set(fileDescriptor,file);
+        //retorna el descriptor table
+        return fileDescriptor;        
     }
 
     public int read(int fileDescriptor, int buffer, int count){
-        OpenFile file=getFile(fileDescriptor);
-        if(file==null){
+        OpenFile file = validFileDescriptor(fileDescriptor);
+        if(file == null){
             return -1;
         }
-        byte [] bufferI= new byte[count];
-        int totalR=file.read(bufferI,0,count);
-        if(totalR==-1){
+        //buffer pointer al buffer en la memoria virtual
+        //count que tanto leer o -1 si es error
+        byte [] bufferI = new byte[count];
+        int leido = file.read(bufferI,0,count);
+        // si no se puede leer
+        if(leido == -1){
             return -1;
         }
-        int writenR=writeVirtualMemory(buffer,bufferI,0,totalR);
-        if(totalR!=writenR){
+        int escrito = writeVirtualMemory(buffer,bufferI,0,leido);
+        // si no se puede escrubur el buffer completo a memoria
+        if(leido != escrito){
             return -1;
         }
-        return totalR; 
+        return leido; 
     }
 
     public int write(int fileDescriptor, int buffer, int count){
-        OpenFile file=getFile(fileDescriptor);
-        if(file==null){
+        OpenFile file = validFileDescriptor(fileDescriptor);
+        if(file == null){
             return -1;
         }
-        byte [] bufferI= new byte[count];
-        int readW=readVirtualMemory(buffer,bufferI,0,count);
-        if(readW==-1){
+        
+        byte [] bufferI = new byte[count];
+        int leido = readVirtualMemory(buffer,bufferI,0,count);
+        if(leido == -1){
             return -1;
         }
-        int totalW=file.write(bufferI,0,readW);
-        if(totalW!=readW){
+
+        int escrito = file.write(bufferI,0,leido);
+        if(escrito != leido){
             return -1;
         }
-        return totalW; 
+        return escrito; 
     }
 
-    public int getNewDescriptor(){
-        for(int i=2; i<fileDescriptorTable.size();i++){
-            if(fileDescriptorTable.get(i)==null){
+    public int close (int fileDescriptor){
+        OpenFile file = validFileDescriptor(fileDescriptor);
+        if(file == null){
+            return -1;
+        }
+        //quitar el file de la tabla 
+        file.close();
+        fileTable.set(fileDescriptor,null);
+        return 0;
+    }
+
+    //marca un file como pendiente para borrar y quira 
+    public int unlink(int fileDescriptor){
+        String result = readVirtualMemoryString(fileDescriptor,256);
+        if(result == null){
+            return -1;
+        }
+        boolean val = ThreadedKernel.fileSystem.remove(result);
+        if(val == false){
+            return -1;
+        }
+        return 0; 
+    }
+
+    //obtiene el proximo disponible de la lista
+    public int getDisponible(){
+        for(int i=2; i<fileTable.size();i++){
+            if(fileTable.get(i) == null){
                 return i; 
             }
         }
         return -1;
     }
-    public OpenFile getFile(int fileDescriptor) {
-        if(fileDescriptor>fileDescriptorTable.size()){
+
+    public OpenFile validFileDescriptor(int fileDescriptor) {
+        //en el rango de la lista?
+        if(fileDescriptor>fileTable.size()){
             return null; 
         }
-        return (OpenFile)fileDescriptorTable.get(fileDescriptor);
+        return (OpenFile)fileTable.get(fileDescriptor);
     }
+
+
+    //_________________________________________________
+
+    private ArrayList fileTable = new ArrayList(16);
 
     /** The program being run by this process. */
     protected Coff coff;
@@ -570,7 +598,7 @@ public class UserProcess {
     
     private int initialPC, initialSP;
     private int argc, argv;
-	private ArrayList fileDescriptorTable= new ArrayList(16);
+	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
 }
