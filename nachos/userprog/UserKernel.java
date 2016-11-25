@@ -14,7 +14,12 @@ public class UserKernel extends ThreadedKernel {
      * Allocate a new user kernel.
      */
     public UserKernel() {
-	super();
+        super();
+        for (int i = 0; i<Machine.processor().getNumPhysPages(); i++){
+            pageTable.add(i);
+        }
+
+	
     }
 
     /**
@@ -108,20 +113,26 @@ public class UserKernel extends ThreadedKernel {
     public void terminate() {
 	super.terminate();
     }
+    //
 
-    public static int getFreePage() {                             
+    public static int getFreePage() {        
+
+        //no ha seleccionado ninguna pagina                     
         int pageNumber = -1;                                       
+        //las paginas solo deben ser ingresadas por un proceso a la vez
         Machine.interrupt().disable();                             
+        // si hay algo dentro del linkedlist saca el pimero
         if (pageTable.isEmpty() == false)                         
             pageNumber = pageTable.removeFirst();                  
         Machine.interrupt().enable();                             
         return pageNumber;                                         
     }                                                           
 
-    public static void addFreePage(int pageNumber) {               
+    public static void addFreePage(int pageNumber) {  
+        // si la pagina es mayor 0 y la pagina essta dentro del space address del proceso             
         Lib.assertTrue(pageNumber >= 0 && pageNumber < Machine.processor().getNumPhysPages()); 
         Machine.interrupt().disable();                              
-                                         
+                                            
         pageTable.addFirst(pageNumber);                             
         Machine.interrupt().enable();                               
     }     

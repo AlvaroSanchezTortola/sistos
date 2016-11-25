@@ -29,7 +29,7 @@ public class UserProcess {
     }
 	pageTable = new TranslationEntry[numPhysPages];
  	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,get userkenet get free gage, true,false,false,false);
+	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
     }
 
     /**
@@ -131,27 +131,37 @@ public class UserProcess {
      * @return	the number of bytes successfully transferred.
      */
     public int readVirtualMemory(int vaddr, byte[] data, int offset,
-				 int length) {
-	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
-
-	byte[] memory = Machine.processor().getMemory();
-	// agarras la direccion que te meten
+                 int length) {
+    Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+    Processor processor = Machine.processor();
+    byte[] memory = Machine.processor().getMemory();
+    int vpn = processor.pageFromAddress(vaddr);               
+    int addressOffset = processor.offsetFromAddress(vaddr);
+    if(vpn >= numPages){
+        return -1;
+    }
+    TranslationEntry entrada = null;
+    entrada = pageTable[vpn]; 
+    int ppn = entrada.ppn; 
+    int paddr = (ppn*pageSize) + addressOffset; 
+    // agarras la direccion que te meten
     //lo dividis entre el tamaño de pagina y le sacas el mod
-    //sacas la indice de pagina virual y el offset
+    //sacas la indice de pagina virual y el offset ----
+
     //pagetable y con ese indice sacas la paginaviral 
     //esa pagina virtual lo multiplicas por el tamaño de pagina y le sumas el offfset
     //cambias vaddr por el resultado este 
 
     //lo haces aqui y el write 
-    
-	// for now, just assume that virtual addresses equal physical addresses
-	if (vaddr < 0 || vaddr >= memory.length)
-	    return 0;
 
-	int amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(memory, vaddr, data, offset, amount);
+    // for now, just assume that virtual addresses equal physical addresses
+    if (ppn < 0 || ppn >= processor.getNumPhysPages())
+        return 0;
 
-	return amount;
+    int amount = Math.min(length, memory.length-paddr);
+    System.arraycopy(memory, paddr, data, offset, amount);
+
+    return amount;
     }
 
     /**
@@ -159,12 +169,12 @@ public class UserProcess {
      * memory.
      * Same as <tt>writeVirtualMemory(vaddr, data, 0, data.length)</tt>.
      *
-     * @param	vaddr	the first byte of virtual memory to write.
-     * @param	data	the array containing the data to transfer.
-     * @return	the number of bytes successfully transferred.
+     * @param   vaddr   the first byte of virtual memory to write.
+     * @param   data    the array containing the data to transfer.
+     * @return  the number of bytes successfully transferred.
      */
     public int writeVirtualMemory(int vaddr, byte[] data) {
-	return writeVirtualMemory(vaddr, data, 0, data.length);
+    return writeVirtualMemory(vaddr, data, 0, data.length);
     }
 
     /**
@@ -174,27 +184,38 @@ public class UserProcess {
      * should return the number of bytes successfully copied (or zero if no
      * data could be copied).
      *
-     * @param	vaddr	the first byte of virtual memory to write.
-     * @param	data	the array containing the data to transfer.
-     * @param	offset	the first byte to transfer from the array.
-     * @param	length	the number of bytes to transfer from the array to
-     *			virtual memory.
-     * @return	the number of bytes successfully transferred.
+     * @param   vaddr   the first byte of virtual memory to write.
+     * @param   data    the array containing the data to transfer.
+     * @param   offset  the first byte to transfer from the array.
+     * @param   length  the number of bytes to transfer from the array to
+     *          virtual memory.
+     * @return  the number of bytes successfully transferred.
      */
     public int writeVirtualMemory(int vaddr, byte[] data, int offset,
-				  int length) {
-	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+                  int length) {
+    Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+    Processor processor = Machine.processor();
+ 
+    byte[] memory = Machine.processor().getMemory();
+    
+    int vpn = processor.pageFromAddress(vaddr);               
+    int addressOffset = processor.offsetFromAddress(vaddr);
 
-	byte[] memory = Machine.processor().getMemory();
-	
-	// for now, just assume that virtual addresses equal physical addresses
-	if (vaddr < 0 || vaddr >= memory.length)
-	    return 0;
+    if(vpn >= numPages){
+        return -1;
+    }
+    TranslationEntry entrada = null;
+    entrada = pageTable[vpn]; 
+    int ppn = entrada.ppn; 
+    int paddr = (ppn*pageSize) + addressOffset; 
+    // for now, just assume that virtual addresses equal physical addresses
+    if (ppn < 0 || ppn >= processor.getNumPhysPages())
+        return 0;
 
-	int amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(data, offset, memory, vaddr, amount);
+    int amount = Math.min(length, memory.length-paddr);
+    System.arraycopy(data, offset, memory, paddr, amount);
 
-	return amount;
+    return amount;
     }
 
     /**
@@ -298,27 +319,38 @@ public class UserProcess {
 	    Lib.debug(dbgProcess, "\tinsufficient physical memory");
 	    return false;
 	}
-    //si no hay pagimas libres lo mandas a la verga
 
-    aqui poner lo de arriba 
-
-
+    pageTable = new TranslationEntry[numPages];
+    for (int i=0; i<numPages; i++){
+        int paginaLibre = UserKernel.getFreePage();
+        if (paginaLibre== -1){
+            Lib.debug(dbgProcess, "\t No hay paginas libres");
+        }
+        else {
+            pageTable[i] = new TranslationEntry(i,paginaLibre, true,false,false,false);
+        }
+    }
 	// load sections
 	for (int s=0; s<coff.getNumSections(); s++) {
 	    CoffSection section = coff.getSection(s);
-	    
 	    Lib.debug(dbgProcess, "\tinitializing " + section.getName()
 		      + " section (" + section.getLength() + " pages)");
-
 	    for (int i=0; i<section.getLength(); i++) {
-		int vpn = section.getFirstVPN()+i;
+        int vpn = section.getFirstVPN()+i;
+
+
+        TranslationEntry entrada = null;
+        entrada = pageTable[vpn];
+        int fisica = entrada.ppn;
+        //if fisica >= processor.getNumSections
+
         //ir a pagetabel 
         //tomar el indice de la viraul addres la page en esa posicion 
         //ese objeto que tomas le sacas la memoria phisica
         // cambiar el vpn a la memoria phisica
 
 		// for now, just assume virtual addresses=physical addresses
-		section.loadPage(i, vpn);
+		section.loadPage(i, fisica);
 	    }
 	}
 	
@@ -590,7 +622,7 @@ public class UserProcess {
 
     public OpenFile validFileDescriptor(int fileDescriptor) {
         //en el rango de la lista?
-        if(fileDescriptor>fileTable.size()){
+        if(fileDescriptor>fileTable.size()||fileDescriptor<0){
             return null; 
         }
         return (OpenFile)fileTable.get(fileDescriptor);
