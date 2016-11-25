@@ -29,7 +29,7 @@ public class UserProcess {
     }
 	pageTable = new TranslationEntry[numPhysPages];
  	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	    pageTable[i] = new TranslationEntry(i,get userkenet get free gage, true,false,false,false);
     }
 
     /**
@@ -135,7 +135,15 @@ public class UserProcess {
 	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 	byte[] memory = Machine.processor().getMemory();
-	
+	// agarras la direccion que te meten
+    //lo dividis entre el tamaño de pagina y le sacas el mod
+    //sacas la indice de pagina virual y el offset
+    //pagetable y con ese indice sacas la paginaviral 
+    //esa pagina virtual lo multiplicas por el tamaño de pagina y le sumas el offfset
+    //cambias vaddr por el resultado este 
+
+    //lo haces aqui y el write 
+    
 	// for now, just assume that virtual addresses equal physical addresses
 	if (vaddr < 0 || vaddr >= memory.length)
 	    return 0;
@@ -290,6 +298,10 @@ public class UserProcess {
 	    Lib.debug(dbgProcess, "\tinsufficient physical memory");
 	    return false;
 	}
+    //si no hay pagimas libres lo mandas a la verga
+
+    aqui poner lo de arriba 
+
 
 	// load sections
 	for (int s=0; s<coff.getNumSections(); s++) {
@@ -300,6 +312,10 @@ public class UserProcess {
 
 	    for (int i=0; i<section.getLength(); i++) {
 		int vpn = section.getFirstVPN()+i;
+        //ir a pagetabel 
+        //tomar el indice de la viraul addres la page en esa posicion 
+        //ese objeto que tomas le sacas la memoria phisica
+        // cambiar el vpn a la memoria phisica
 
 		// for now, just assume virtual addresses=physical addresses
 		section.loadPage(i, vpn);
